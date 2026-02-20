@@ -173,5 +173,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ---
 
 <div align="center">
-  <small>Built with ❤️ by the Virtual Hospital Team</small>
+  <small>Built with ❤️ by the Abanee</small>
 </div>
+
