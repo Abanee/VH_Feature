@@ -125,7 +125,8 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     # "https://vh-feature-7y1k6atfc-abiabanee-6940s-projects.vercel.app", 
-    "https://vh-feature.vercel.app",                                    
+    "https://vh-feature.vercel.app", 
+    "https://vh-feature.onrender.com",                                   
     "http://localhost:3000",                                            
 ]
 CORS_ALLOW_CREDENTIALS = True
