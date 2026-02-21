@@ -5,18 +5,19 @@ import os
 import dj_database_url
 from pathlib import Path
 from datetime import timedelta
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # ---------- Security & Core ----------
-# Pull secret key from environment variables (Render), fallback for local dev
+# Pull secret key from environment variables (Render)
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-vh-platform-dev-key-change-in-production-2026')
 
 # DEBUG should be False in production for security
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # Allow your Vercel VITE app and your Render backend domain
-# Example Render ENV: ALLOWED_HOSTS=your-app.onrender.com,localhost,127.0.0.1
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # ---------- Apps ----------
@@ -26,7 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'whitenoise.runserver_nostatic', # Added for WhiteNoise development
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     # Third-party
     'rest_framework',
@@ -41,7 +42,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # Added for serving static files on Render
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -70,25 +71,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# ---------- Database (TiDB via URL) ----------
-# Uses DATABASE_URL from Render environment variables to connect to TiDB
-# Format: mysql://user:password@host:port/dbname
+# ---------- Database (Strictly TiDB via Environment Variable) ----------
+# dj_database_url automatically looks for 'DATABASE_URL' in your environment.
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL', 'mysql://root:2580@localhost:3306/virtual_hospital_db'),
         conn_max_age=600,
         conn_health_checks=True,
     )
 }
 
-# Add charset, strict mode options, AND the required SSL config for TiDB
-DATABASES['default']['OPTIONS'] = {
-    'charset': 'utf8mb4',
-    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-    'ssl': {
-        'ca': '/etc/ssl/certs/ca-certificates.crt', 
+# Only apply TiDB-specific options if a database URL was successfully found
+if 'ENGINE' in DATABASES['default']:
+    DATABASES['default']['OPTIONS'] = {
+        'charset': 'utf8mb4',
+        'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        'ssl': {
+            'ca': '/etc/ssl/certs/ca-certificates.crt', 
+        }
     }
-}
 
 # ---------- Auth ----------
 AUTH_USER_MODEL = 'api.User'
@@ -122,22 +122,18 @@ SIMPLE_JWT = {
 }
 
 # ---------- CORS ----------
-# Secured for production: Only Vercel frontend and local dev can access the API
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
-    "https://vh-feature-7y1k6atfc-abiabanee-6940s-projects.vercel.app", # Your specific deployment URL
-    "https://vh-feature.vercel.app",                                    # Your main Vercel domain
-    "http://localhost:3000",                                            # Your local Vite Dev Server
+    "https://vh-feature-7y1k6atfc-abiabanee-6940s-projects.vercel.app", 
+    "https://vh-feature.vercel.app",                                    
+    "http://localhost:3000",                                            
 ]
 CORS_ALLOW_CREDENTIALS = True
 
 # ---------- Static & Media ----------
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# WhiteNoise configuration for static file compression and caching on Render
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
