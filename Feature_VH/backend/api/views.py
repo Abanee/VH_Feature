@@ -27,6 +27,22 @@ from .serializers import (
 from .permissions import IsDoctor, IsPatient, IsAdmin
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_root(request):
+    """Root view to provide a welcome message and status."""
+    return Response({
+        'status': 'Online',
+        'message': 'Welcome to the Virtual Hospital API',
+        'endpoints': {
+            'api_list': '/api/',
+            'admin': '/admin/',
+            'auth': '/api/token-auth/',
+            'register': '/api/users/',
+        }
+    })
+
+
 # ─── Auth: Register ──────────────────────────────────────────────────────────
 
 @api_view(['POST'])
