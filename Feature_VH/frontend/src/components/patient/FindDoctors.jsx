@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Filter, Heart, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-// import { mockDoctors } from '../../data/mockData';
+import { doctorAPI } from '../../api/api';
 import DoctorCard from './DoctorCard';
 import BookingModal from './BookingModal';
 import Footer from '../shared/Footer';
@@ -18,11 +18,8 @@ const FindDoctors = () => {
     useEffect(() => {
         const fetchDoctors = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/doctors/');
-                if (response.ok) {
-                    const data = await response.json();
-                    setDoctors(data);
-                }
+                const response = await doctorAPI.getAll();
+                setDoctors(response.data);
             } catch (error) {
                 console.error("Failed to fetch doctors:", error);
             } finally {
@@ -32,18 +29,13 @@ const FindDoctors = () => {
         fetchDoctors();
     }, []);
 
-    const specialities = ['all', 'Cardiologist', 'Pediatrician', 'Dermatologist', 'Neurologist', 'Anesthesiologist'];
+    const specialities = ['all', 'General', 'Cardiologist', 'Pediatrician', 'Dermatologist', 'Neurologist', 'Anesthesiologist'];
 
     const filteredDoctors = doctors.filter((doctor) => {
-        // Adapter for backend data structure if needed, assuming backend returns similar fields or we map them
-        // Backend Doctor model: user (nested), speciality, etc.
-        // DoctorCard expects: name, speciality, image, rating...
-        // We might need to map backend data to DoctorCard props expected format.
-        // Backend: { user: { first_name, last_name }, speciality, ... }
-        const name = doctor.user ? `${doctor.user.first_name} ${doctor.user.last_name}` : 'Unknown Doctor';
+        const name = doctor.name || 'Doctor';
         const matchesSearch =
             name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            doctor.speciality.toLowerCase().includes(searchTerm.toLowerCase());
+            (doctor.speciality && doctor.speciality.toLowerCase().includes(searchTerm.toLowerCase()));
         const matchesSpeciality = selectedSpeciality === 'all' || doctor.speciality === selectedSpeciality;
         return matchesSearch && matchesSpeciality;
     });
@@ -141,12 +133,12 @@ const FindDoctors = () => {
                         <p className="text-center text-navy-600 col-span-3">Loading doctors...</p>
                     ) : (
                         filteredDoctors.map((doctor) => {
-                            // Map backend data to frontend props if necessary
+                            // Map backend data to frontend props
                             const mappedDoctor = {
                                 ...doctor,
-                                name: doctor.user ? `Dr. ${doctor.user.first_name || ''} ${doctor.user.last_name || ''}` : 'Doctor',
-                                image: doctor.image_url || 'https://via.placeholder.com/150', // Fallback image
-                                // Ensure other fields match
+                                // Backend provides 'photo' (full URL) and 'name' (Dr. First Last)
+                                photo: doctor.photo || 'https://via.placeholder.com/150',
+                                name: doctor.name || 'Doctor',
                             };
                             return (
                                 <motion.div
