@@ -220,13 +220,17 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 # ─── Medicines ────────────────────────────────────────────────────────────────
 
 class MedicineViewSet(viewsets.ModelViewSet):
-    """CRUD for medicines."""
+    """CRUD for medicines. Viewable by all, editable by Admins only."""
     queryset = Medicine.objects.all()
     serializer_class = MedicineSerializer
-    permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'category']
     pagination_class = None
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
 
 
 # ─── Prescriptions ───────────────────────────────────────────────────────────
@@ -306,16 +310,37 @@ def get_recordings(request, appointment_id):
 # ─── Admin Stats ─────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAdmin])
 def admin_stats(request):
     """Get platform statistics for admin dashboard."""
+    from django.utils import timezone
+    from datetime import timedelta
+
     total_doctors = DoctorProfile.objects.count()
     total_patients = PatientProfile.objects.count()
     total_appointments = Appointment.objects.count()
     pending_appointments = Appointment.objects.filter(status='pending').count()
     approved_appointments = Appointment.objects.filter(status='approved').count()
     total_medicines = Medicine.objects.count()
-    total_prescriptions = Prescription.objects.count()
+
+    # Active monitoring: users with last_login in last 15 minutes
+    time_threshold = timezone.now() - timedelta(minutes=15)
+    active_users = User.objects.filter(last_login__gte=time_threshold)
+    
+    online_doctors = []
+    online_patients = []
+    
+    for u in active_users:
+        user_data = {
+            'id': u.id,
+            'name': u.get_full_name() or u.username,
+            'role': u.role,
+            'last_active': u.last_login
+        }
+        if u.role == 'doctor':
+            online_doctors.append(user_data)
+        elif u.role == 'patient':
+            online_patients.append(user_data)
 
     return Response({
         'total_doctors': total_doctors,
@@ -324,5 +349,6 @@ def admin_stats(request):
         'pending_appointments': pending_appointments,
         'approved_appointments': approved_appointments,
         'total_medicines': total_medicines,
-        'total_prescriptions': total_prescriptions,
+        'online_doctors': online_doctors,
+        'online_patients': online_patients,
     })

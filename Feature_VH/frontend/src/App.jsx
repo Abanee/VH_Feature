@@ -79,7 +79,14 @@ function App() {
                 element={isAuthenticated ? <ConsultationRoom /> : <Navigate to="/login" />}
               />
 
-              <Route path="/admin" element={<AdminDashboard />} />
+              <Route
+                path="/admin"
+                element={
+                  isAuthenticated && userRole === 'admin'
+                    ? <AdminDashboard />
+                    : <Navigate to="/login" />
+                }
+              />
 
               {/* Default Route */}
               <Route

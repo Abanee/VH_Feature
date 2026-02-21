@@ -23,6 +23,14 @@ const AdminDashboard = () => {
   const [doctors, setDoctors] = useState([]);
   const [medicines, setMedicines] = useState([]);
   const [apiStats, setApiStats] = useState(null);
+  const [showAddMedicine, setShowAddMedicine] = useState(false);
+  const [newMedicine, setNewMedicine] = useState({
+    name: '',
+    category: '',
+    price: '',
+    stock: '',
+    description: ''
+  });
 
   const { appointments, fetchAppointments } = useAppointmentStore();
 
@@ -138,6 +146,19 @@ const AdminDashboard = () => {
     });
     return Array.from(map.values()).sort((a, b) => b.visits - a.visits);
   }, [appointments]);
+
+  const handleAddMedicine = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await medicineAPI.create(newMedicine);
+      setMedicines([...medicines, response.data]);
+      setShowAddMedicine(false);
+      setNewMedicine({ name: '', category: '', price: '', stock: '', description: '' });
+      fetchMedicines(); // Refresh stats too
+    } catch (error) {
+      console.error('Failed to add medicine:', error);
+    }
+  };
 
   const specialities = useMemo(() => {
     return [...new Set(doctors.map(d => d.speciality))].sort();
@@ -282,30 +303,32 @@ const AdminDashboard = () => {
           >
             <div className="lg:col-span-2 space-y-6">
               <div className="card">
-                <h2 className="text-lg font-semibold text-navy-900 mb-3 flex items-center space-x-2">
-                  <ShieldCheck className="w-5 h-5 text-teal-600" />
-                  <span>Platform health snapshot</span>
+                <h2 className="text-lg font-semibold text-navy-900 mb-4 flex items-center space-x-2">
+                  <Activity className="w-5 h-5 text-green-500" />
+                  <span>Active Now</span>
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-navy-500">Total doctors</p>
-                    <p className="text-2xl font-bold text-navy-900">{stats.totalDoctors}</p>
+                    <h4 className="text-xs font-bold text-navy-400 uppercase tracking-wider mb-2">Online Doctors</h4>
+                    <div className="space-y-2">
+                      {apiStats?.online_doctors?.length > 0 ? apiStats.online_doctors.map(doc => (
+                        <div key={doc.id} className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-100">
+                          <span className="text-sm font-medium text-navy-900">{doc.name}</span>
+                          <span className="flex h-2 w-2 rounded-full bg-green-500"></span>
+                        </div>
+                      )) : <p className="text-sm text-navy-500">No doctors online</p>}
+                    </div>
                   </div>
                   <div>
-                    <p className="text-navy-500">Active patients</p>
-                    <p className="text-2xl font-bold text-navy-900">{stats.uniquePatients}</p>
-                  </div>
-                  <div>
-                    <p className="text-navy-500">Completed consults</p>
-                    <p className="text-2xl font-bold text-navy-900">
-                      {stats.completedAppointments}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-navy-500">Pending requests</p>
-                    <p className="text-2xl font-bold text-yellow-500">
-                      {stats.pendingAppointments}
-                    </p>
+                    <h4 className="text-xs font-bold text-navy-400 uppercase tracking-wider mb-2">Online Patients</h4>
+                    <div className="space-y-2">
+                      {apiStats?.online_patients?.length > 0 ? apiStats.online_patients.map(pat => (
+                        <div key={pat.id} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-100">
+                          <span className="text-sm font-medium text-navy-900">{pat.name}</span>
+                          <span className="flex h-2 w-2 rounded-full bg-blue-500"></span>
+                        </div>
+                      )) : <p className="text-sm text-navy-500">No patients online</p>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -538,8 +561,70 @@ const AdminDashboard = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-navy-900">Pharmacy catalogue</h2>
-              <p className="text-sm text-navy-600">{medicines.length} items</p>
+              <button
+                onClick={() => setShowAddMedicine(!showAddMedicine)}
+                className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center space-x-2"
+              >
+                <Pill className="w-4 h-4" />
+                <span>{showAddMedicine ? 'Cancel' : 'Add New Medicine'}</span>
+              </button>
             </div>
+
+            {showAddMedicine && (
+              <motion.form
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                onSubmit={handleAddMedicine}
+                className="mb-8 p-6 bg-navy-50 rounded-xl border-2 border-dashed border-navy-200"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-bold text-navy-500 uppercase mb-1">Medicine Name</label>
+                    <input
+                      required
+                      type="text"
+                      value={newMedicine.name}
+                      onChange={(e) => setNewMedicine({ ...newMedicine, name: e.target.value })}
+                      className="w-full px-4 py-2 rounded-lg border border-navy-200 focus:border-teal-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-navy-500 uppercase mb-1">Category</label>
+                    <input
+                      required
+                      type="text"
+                      value={newMedicine.category}
+                      onChange={(e) => setNewMedicine({ ...newMedicine, category: e.target.value })}
+                      className="w-full px-4 py-2 rounded-lg border border-navy-200 focus:border-teal-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-navy-500 uppercase mb-1">Price ($)</label>
+                    <input
+                      required
+                      type="number"
+                      step="0.01"
+                      value={newMedicine.price}
+                      onChange={(e) => setNewMedicine({ ...newMedicine, price: e.target.value })}
+                      className="w-full px-4 py-2 rounded-lg border border-navy-200 focus:border-teal-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-navy-500 uppercase mb-1">Stock Quantity</label>
+                    <input
+                      required
+                      type="number"
+                      value={newMedicine.stock}
+                      onChange={(e) => setNewMedicine({ ...newMedicine, stock: e.target.value })}
+                      className="w-full px-4 py-2 rounded-lg border border-navy-200 focus:border-teal-500 outline-none"
+                    />
+                  </div>
+                </div>
+                <button type="submit" className="w-full bg-teal-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-teal-200 hover:bg-teal-700 transition-colors">
+                  Add to Catalogue
+                </button>
+              </motion.form>
+            )}
             <div className="overflow-x-auto text-sm max-h-[420px]">
               <table className="min-w-full text-left">
                 <thead className="text-xs uppercase text-navy-500 border-b border-navy-100">

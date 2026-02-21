@@ -60,6 +60,7 @@ export const appointmentAPI = {
 
 export const medicineAPI = {
     getAll: () => api.get('/medicines/'),
+    create: (data) => api.post('/medicines/', data),
 };
 
 export const adminAPI = {
