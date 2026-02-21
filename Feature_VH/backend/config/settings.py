@@ -81,10 +81,13 @@ DATABASES = {
     )
 }
 
-# Add charset and strict mode options specific to MySQL/TiDB
+# Add charset, strict mode options, AND the required SSL config for TiDB
 DATABASES['default']['OPTIONS'] = {
     'charset': 'utf8mb4',
     'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+    'ssl': {
+        'ca': '/etc/ssl/certs/ca-certificates.crt', 
+    }
 }
 
 # ---------- Auth ----------
