@@ -87,6 +87,7 @@ function App() {
                     : <Navigate to="/login" />
                 }
               />
+              <Route path="/Admin" element={<Navigate to="/admin" />} />
 
               {/* Default Route */}
               <Route
