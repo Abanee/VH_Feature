@@ -27,6 +27,22 @@ from .serializers import (
 from .permissions import IsDoctor, IsPatient, IsAdmin
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_root(request):
+    """Root view to provide a welcome message and status."""
+    return Response({
+        'status': 'Online',
+        'message': 'Welcome to the Virtual Hospital API',
+        'endpoints': {
+            'api_list': '/api/',
+            'admin': '/admin/',
+            'auth': '/api/token-auth/',
+            'register': '/api/users/',
+        }
+    })
+
+
 # ─── Auth: Register ──────────────────────────────────────────────────────────
 
 @api_view(['POST'])
@@ -245,10 +261,19 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
 
 # ─── Chat Messages ───────────────────────────────────────────────────────────
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def chat_history(request, appointment_id):
-    """Get chat history for a specific appointment."""
+    """Get chat history or send a message for a specific appointment."""
+    if request.method == 'POST':
+        serializer = ChatMessageSerializer(
+            data=request.data, context={'request': request}
+        )
+        if serializer.is_valid():
+            serializer.save(sender=request.user, appointment_id=appointment_id)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     messages = ChatMessage.objects.filter(
         appointment_id=appointment_id
     ).select_related('sender').order_by('timestamp')

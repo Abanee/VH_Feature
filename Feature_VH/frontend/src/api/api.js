@@ -44,8 +44,8 @@ export const doctorAPI = {
 
 export const patientAPI = {
     getAll: () => api.get('/patients/'),
-    getProfile: () => api.get('/patients/me/'),
-    updateProfile: (data) => api.patch('/patients/me/', data),
+    getProfile: () => api.get('/users/me/'),
+    updateProfile: (data) => api.patch('/users/me/', data),
 };
 
 export const appointmentAPI = {
@@ -64,7 +64,7 @@ export const adminAPI = {
 
 export const chatAPI = {
     getMessages: (appointmentId) => api.get(`/chat/${appointmentId}/`),
-    sendMessage: (data) => api.post('/chat/send/', data),
+    sendMessage: (appointmentId, data) => api.post(`/chat/${appointmentId}/`, data),
 };
 
 export const recordingAPI = {
