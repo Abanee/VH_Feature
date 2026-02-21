@@ -27,6 +27,40 @@ from .serializers import (
 from .permissions import IsDoctor, IsPatient, IsAdmin
 
 
+# ─── Root: API Documentation ─────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_root(request):
+    """Return API documentation and available endpoints."""
+    return Response({
+        'message': 'Welcome to Virtual Hospital Platform API',
+        'endpoints': {
+            'auth': {
+                'register': '/api/users/',
+                'login': '/api/token-auth/',
+                'current_user': '/api/users/me/',
+            },
+            'doctors': {
+                'list': '/api/doctors/',
+                'detail': '/api/doctors/{id}/',
+            },
+            'patients': {
+                'list': '/api/patients/',
+            },
+            'appointments': {
+                'list': '/api/appointments/',
+                'detail': '/api/appointments/{id}/',
+            },
+            'admin': {
+                'panel': '/admin/',
+                'stats': '/api/admin/stats/',
+            },
+        },
+        'documentation': 'For more information, visit /admin/',
+    })
+
+
 # ─── Auth: Register ──────────────────────────────────────────────────────────
 
 @api_view(['POST'])
